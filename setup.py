@@ -14,7 +14,7 @@
 
 # pylint: skip-file
 
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r") as file:
     long_description = file.read()
@@ -25,13 +25,13 @@ with open("VERSION", "r") as file:
 package_data = {"": ["*"]}
 
 install_requires = [
-    "gym==0.17.2",
-    "imageio-ffmpeg==0.4.2",
-    "imageio==2.8.0",
-    "matplotlib==3.2.1",
-    "tensorflow-probability==0.12.2",
-    "tensorflow==2.5.0",
-    "tf-agents==0.8.0",
+    "gym>=0.17.2",
+    "imageio-ffmpeg>=0.4.2",
+    "imageio>=2.8.0",
+    "matplotlib>=3.2.1",
+    "tensorflow-probability>=0.12.2",
+    "tensorflow>=2.5.0",
+    "tf-agents>=0.10.0",
 ]
 
 extras_require = {"mujoco-py": ["mujoco-py>=2.0,<2.1"]}
@@ -65,6 +65,7 @@ setup_kwargs = {
     "install_requires": install_requires,
     "extras_require": extras_require,
     "python_requires": ">=3.7,<4.0",
+    "zip_safe": False,
 }
 
 
