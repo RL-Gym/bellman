@@ -1034,7 +1034,7 @@ python-versions = "*"
 
 [[package]]
 name = "tf-agents"
-version = "0.8.0"
+version = "0.10.0"
 description = "TF-Agents: A Reinforcement Learning Library for TensorFlow"
 category = "main"
 optional = false
