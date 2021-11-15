@@ -29,7 +29,7 @@ install_requires = [
     "imageio-ffmpeg>=0.4.2",
     "imageio>=2.8.0",
     "matplotlib>=3.2.1",
-    "tensorflow-probability>=0.12.2",
+    "tensorflow-probability>=0.13.0",
     "tensorflow>=2.5.0",
     "tf-agents>=0.10.0",
 ]

@@ -1048,7 +1048,7 @@ gym = ">=0.17.0"
 numpy = ">=1.13.3"
 protobuf = ">=3.11.3"
 six = ">=1.10.0"
-tensorflow-probability = "0.12.2"
+tensorflow-probability = "0.13.0"
 typing-extensions = ">=3.7.4.3"
 wrapt = ">=1.11.1"
 
