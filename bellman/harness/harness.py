@@ -38,6 +38,7 @@ from tf_agents.metrics.tf_metrics import (
     NumberOfEpisodes,
 )
 from tf_agents.policies.random_tf_policy import RandomTFPolicy
+from tf_agents.policies import greedy_policy
 from tf_agents.replay_buffers.replay_buffer import ReplayBuffer
 from tf_agents.replay_buffers.tf_uniform_replay_buffer import TFUniformReplayBuffer
 from tf_agents.utils import common
@@ -69,6 +70,9 @@ class ExperimentHarness:
         summary_interval: int,
         evaluation_interval: int,
         number_of_evaluation_episodes: int,
+        train_checkpoint_interval: int,
+        policy_checkpoint_interval: int,
+        rb_checkpoint_interval: int,
         number_of_initial_random_policy_steps: int = 0,
         use_tf_function: bool = False,
     ):
@@ -113,6 +117,9 @@ class ExperimentHarness:
         self._number_of_initial_random_policy_steps = number_of_initial_random_policy_steps
         self._use_tf_function = use_tf_function
         self._max_steps: Optional[int] = None
+        self.train_checkpoint_interval = train_checkpoint_interval
+        self.policy_checkpoint_interval = policy_checkpoint_interval
+        self.rb_checkpoint_interval = rb_checkpoint_interval
 
     @property
     def agent(self) -> TFAgent:
@@ -265,6 +272,25 @@ class ExperimentHarness:
             else:
                 tf.compat.v2.summary.scalar(name=metric_name, data=metric_value, step=step)
 
+    def create_checkpoints(self, base_dir, train_metrics, replay_buffer, global_step):
+        eval_policy = greedy_policy.GreedyPolicy(self.agent.policy)
+
+        train_checkpointer = common.Checkpointer(
+            ckpt_dir=os.path.join(base_dir, 'agent'),
+            agent=self.agent,
+            global_step=global_step,
+            metrics=metric_utils.MetricsGroup(train_metrics, 'train_metrics'))
+        policy_checkpointer = common.Checkpointer(
+            ckpt_dir=os.path.join(base_dir, 'policy'),
+            policy=eval_policy,
+            global_step=global_step)
+        rb_checkpointer = common.Checkpointer(
+            ckpt_dir=os.path.join(base_dir, 'replay_buffer'),
+            max_to_keep=1,
+            replay_buffer=replay_buffer)
+        return train_checkpointer, policy_checkpointer, rb_checkpointer
+
+
     def run(self):
         """
         This method runs an experiment. It creates a loop that steps through the environment,
@@ -315,6 +341,12 @@ class ExperimentHarness:
             real_replay_buffer,
             train_metrics,
         )
+
+        # Create checkpoints to save agent and policy
+        global_step = tf.compat.v1.train.get_or_create_global_step()
+        train_checkpointer, policy_checkpointer, rb_checkpointer = self.create_checkpoints(base_dir, train_metrics, real_replay_buffer, global_step)
+        train_checkpointer.initialize_or_restore()
+        rb_checkpointer.initialize_or_restore()
 
         # Reset the real environment
         time_step = self._environment.reset()
@@ -402,6 +434,17 @@ class ExperimentHarness:
                     use_function=self._use_tf_function,
                 )
                 metric_utils.log_metrics(evaluation_metrics)
+
+            # Save agent on intervals
+            global_step_val = global_step.numpy()
+            if global_step_val % self.train_checkpoint_interval == 0:
+                train_checkpointer.save(global_step=global_step_val)
+
+            if global_step_val % self.policy_checkpoint_interval == 0:
+                policy_checkpointer.save(global_step=global_step_val)
+
+            if global_step_val % self.rb_checkpoint_interval == 0:
+                rb_checkpointer.save(global_step=global_step_val)
 
         self.write_summary_scalar(
             "Time", 0.0, environment_steps_metric.result(), train_summary_writer
